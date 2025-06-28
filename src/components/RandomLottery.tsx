@@ -88,7 +88,6 @@ const ThaiLotteryOverlay: React.FC = () => {
         const titleFontSize = Math.max(48 * baseFontMultiplier, 24);
         const labelFontSize = Math.max(36 * baseFontMultiplier, 18);
         const numberFontSize = Math.max(60 * baseFontMultiplier, 30);
-        const blessingFontSize = Math.max(28 * baseFontMultiplier, 16);
 
         // Add text shadow effect for better visibility
         const addTextShadow = (text: string, x: number, y: number, color: string, shadowColor: string = 'rgba(0,0,0,0.8)') => {
@@ -112,7 +111,7 @@ const ThaiLotteryOverlay: React.FC = () => {
 
         // Draw title
         ctx.font = `bold ${titleFontSize}px Arial, sans-serif`;
-        addTextShadow('🎰 เลขมงคลประจำวัน', centerX, centerY - verticalSpacing * 2, '#FFD700');
+        addTextShadow('เลขมงคลประจำวัน', centerX, centerY - verticalSpacing * 2, '#FFD700');
 
         // Draw 3-digit numbers section
         ctx.font = `bold ${labelFontSize}px Arial, sans-serif`;
@@ -135,10 +134,6 @@ const ThaiLotteryOverlay: React.FC = () => {
           const x = centerX + (index - 1) * spacing2Digit;
           addTextShadow(num, x, centerY + verticalSpacing, '#FFFFFF');
         });
-
-        // Draw blessing text
-        ctx.font = `bold ${blessingFontSize}px Arial, sans-serif`;
-        addTextShadow('🙏 ขอให้โชคดี มีความสุข และร่ำรวย! 🍀💰', centerX, centerY + verticalSpacing * 2, '#FFD700');
 
         // Download the image
         const link = document.createElement('a');
@@ -234,7 +229,7 @@ const ThaiLotteryOverlay: React.FC = () => {
                           textShadow: '3px 3px 0px rgba(0,0,0,0.8), -3px -3px 0px rgba(0,0,0,0.8), 3px -3px 0px rgba(0,0,0,0.8), -3px 3px 0px rgba(0,0,0,0.8)'
                         }}
                       >
-                        🎰 เลขมงคลประจำวัน
+                        เลขมงคลประจำวัน
                       </div>
                     </div>
 
@@ -286,16 +281,6 @@ const ThaiLotteryOverlay: React.FC = () => {
                           </div>
                         ))}
                       </div>
-                    </div>
-
-                    {/* Blessing */}
-                    <div
-                      className="text-yellow-300 font-bold text-sm sm:text-base md:text-lg drop-shadow-2xl"
-                      style={{
-                        textShadow: '2px 2px 0px rgba(0,0,0,0.8), -2px -2px 0px rgba(0,0,0,0.8), 2px -2px 0px rgba(0,0,0,0.8), -2px 2px 0px rgba(0,0,0,0.8)'
-                      }}
-                    >
-                      🙏 ขอให้โชคดี มีความสุข และร่ำรวย! 🍀💰
                     </div>
                   </div>
                 </div>
@@ -421,9 +406,6 @@ const ThaiLotteryOverlay: React.FC = () => {
                     ))}
                   </div>
                 </div>
-              </div>
-              <div className="mt-8 text-gray-700">
-                <p className="text-xl font-semibold">🙏 ขอให้โชคดี มีความสุข และร่ำรวย! 🍀💰</p>
               </div>
             </div>
           </div>
