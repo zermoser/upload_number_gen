@@ -5,7 +5,148 @@ interface LotteryNumbers {
   twoDigit: string[];
 }
 
+const LoginForm: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLogging, setIsLogging] = useState(false);
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLogging(true);
+
+    setTimeout(() => {
+      if (username === 'admin' && password === 'admin@lnwza007') {
+        onLogin();
+      } else {
+        setError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+      }
+      setIsLogging(false);
+    }, 1000);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-100">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <span className="text-6xl animate-bounce">🎰</span>
+          </div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
+            เข้าสู่ระบบ
+          </h1>
+          <p className="text-gray-500">เครื่องสุ่มเลขมงคลไทย</p>
+        </div>
+
+        {/* Login Form */}
+        <form onSubmit={handleLogin} className="space-y-6">
+          {/* Username Field */}
+          <div>
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+              ชื่อผู้ใช้
+            </label>
+            <div className="relative">
+              <input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-200 pl-12"
+                placeholder="กรอกชื่อผู้ใช้"
+                required
+              />
+              <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl">👤</span>
+            </div>
+          </div>
+
+          {/* Password Field */}
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              รหัสผ่าน
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-200 pl-12 pr-12"
+                placeholder="กรอกรหัสผ่าน"
+                required
+              />
+              <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl">🔒</span>
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                {showPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+              ❌ {error}
+            </div>
+          )}
+
+          {/* Login Button */}
+          <button
+            type="submit"
+            disabled={isLogging}
+            className={`
+              w-full py-3 px-4 text-white font-bold text-lg rounded-xl shadow-lg
+              bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-600
+              hover:from-purple-600 hover:via-blue-600 hover:to-indigo-700
+              transform hover:scale-105 hover:shadow-xl transition-all duration-300
+              disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+              ${isLogging ? 'animate-pulse' : ''}
+            `}
+          >
+            {isLogging ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <span>กำลังเข้าสู่ระบบ...</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2">
+                <span>🚀</span>
+                <span>เข้าสู่ระบบ</span>
+              </div>
+            )}
+          </button>
+        </form>
+
+        {/* Demo Credentials */}
+        <div className="mt-8 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl border-l-4 border-yellow-400">
+          <p className="text-sm text-gray-700">
+            <span className="font-bold">💡 ข้อมูลสำหรับทดสอบ:</span>
+          </p>
+          <div className="mt-2 space-y-1 text-sm">
+            <p><span className="font-medium">ชื่อผู้ใช้:</span> admin</p>
+            <p><span className="font-medium">รหัสผ่าน:</span> admin@lnwza007</p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-8 text-center text-sm text-gray-500">
+          <div className="flex items-center justify-center gap-2">
+            <span>🔐</span>
+            <span>ระบบปลอดภัย 100%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ThaiLotteryOverlay: React.FC = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
   const [numbers, setNumbers] = useState<LotteryNumbers>({ threeDigit: [], twoDigit: [] });
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -13,6 +154,17 @@ const ThaiLotteryOverlay: React.FC = () => {
   const [imageInfo, setImageInfo] = useState<{ width: number; height: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Login handler
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+  };
+
+  // Logout handler
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    resetAll();
+  };
 
   // Generate lottery numbers
   const generateNumbers = (): void => {
@@ -159,17 +311,32 @@ const ThaiLotteryOverlay: React.FC = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  // Show login form if not logged in
+  if (!isLoggedIn) {
+    return <LoginForm onLogin={handleLogin} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4">
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
+        {/* Header with Logout */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <span className="text-5xl animate-bounce">🎰</span>
-            <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              เครื่องสุ่มเลขมงคล
-            </h1>
-            <span className="text-5xl animate-bounce">🍀</span>
+          <div className="flex items-center justify-between mb-4">
+            <div></div>
+            <div className="flex items-center gap-3">
+              <span className="text-5xl animate-bounce">🎰</span>
+              <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                เครื่องสุ่มเลขมงคล
+              </h1>
+              <span className="text-5xl animate-bounce">🍀</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200 flex items-center gap-2"
+            >
+              <span>🚪</span>
+              <span>ออกจากระบบ</span>
+            </button>
           </div>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto">
             อัปโหลดภาพพื้นหลังที่คุณชื่นชอบ แล้วให้เราสร้างเลขมงคลบนภาพให้คุณ
