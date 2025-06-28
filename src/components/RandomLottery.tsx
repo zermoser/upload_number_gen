@@ -5,11 +5,12 @@ interface LotteryNumbers {
   twoDigit: string[];
 }
 
-const RandomLottery: React.FC = () => {
+const ThaiLotteryOverlay: React.FC = () => {
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
   const [numbers, setNumbers] = useState<LotteryNumbers>({ threeDigit: [], twoDigit: [] });
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
+  const [imageInfo, setImageInfo] = useState<{ width: number; height: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -26,7 +27,7 @@ const RandomLottery: React.FC = () => {
         )
       });
       setIsGenerating(false);
-    }, 300);
+    }, 500);
   };
 
   // Handle image upload
@@ -35,16 +36,28 @@ const RandomLottery: React.FC = () => {
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setBackgroundImage(e.target?.result as string);
-        generateNumbers(); // Auto generate numbers when image is uploaded
+        const img = new Image();
+        img.onload = () => {
+          setImageInfo({ width: img.width, height: img.height });
+          setBackgroundImage(e.target?.result as string);
+          generateNumbers(); // Auto generate numbers when image is uploaded
+        };
+        img.src = e.target?.result as string;
       };
       reader.readAsDataURL(file);
     }
   };
 
+  // Handle image change (upload new background)
+  const handleImageChange = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   // Draw numbers on canvas and download
   const downloadImage = async () => {
-    if (!backgroundImage || !canvasRef.current) return;
+    if (!backgroundImage || !canvasRef.current || !imageInfo) return;
 
     setIsDownloading(true);
 
@@ -55,12 +68,12 @@ const RandomLottery: React.FC = () => {
 
       const img = new Image();
       img.onload = () => {
-        // Set canvas size to match image
-        canvas.width = img.width;
-        canvas.height = img.height;
+        // Set canvas size to match original image dimensions
+        canvas.width = imageInfo.width;
+        canvas.height = imageInfo.height;
 
         // Draw background image
-        ctx.drawImage(img, 0, 0);
+        ctx.drawImage(img, 0, 0, imageInfo.width, imageInfo.height);
 
         // Setup text styling
         ctx.textAlign = 'center';
@@ -70,51 +83,67 @@ const RandomLottery: React.FC = () => {
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
 
-        // Draw semi-transparent background for numbers
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(centerX - 200, centerY - 120, 400, 240);
+        // Calculate font sizes - 70% of image size as requested
+        const baseFontMultiplier = Math.min(canvas.width, canvas.height) * 0.7 / 1000; // Scale based on smaller dimension
+        const titleFontSize = Math.max(48 * baseFontMultiplier, 24);
+        const labelFontSize = Math.max(36 * baseFontMultiplier, 18);
+        const numberFontSize = Math.max(60 * baseFontMultiplier, 30);
+        const blessingFontSize = Math.max(28 * baseFontMultiplier, 16);
 
-        // Add border
-        ctx.strokeStyle = '#FFD700';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(centerX - 200, centerY - 120, 400, 240);
+        // Add text shadow effect for better visibility
+        const addTextShadow = (text: string, x: number, y: number, color: string, shadowColor: string = 'rgba(0,0,0,0.8)') => {
+          const shadowOffset = Math.max(baseFontMultiplier * 3, 2);
+          // Draw shadow with multiple offsets for better visibility
+          ctx.fillStyle = shadowColor;
+          for (let dx = -shadowOffset; dx <= shadowOffset; dx++) {
+            for (let dy = -shadowOffset; dy <= shadowOffset; dy++) {
+              if (dx !== 0 || dy !== 0) {
+                ctx.fillText(text, x + dx, y + dy);
+              }
+            }
+          }
+          // Draw main text
+          ctx.fillStyle = color;
+          ctx.fillText(text, x, y);
+        };
+
+        // Calculate vertical spacing based on image height
+        const verticalSpacing = canvas.height / 8;
 
         // Draw title
-        ctx.font = 'bold 28px Arial';
-        ctx.fillStyle = '#FFD700';
-        ctx.fillText('🎰 เลขมงคลประจำวัน', centerX, centerY - 80);
+        ctx.font = `bold ${titleFontSize}px Arial, sans-serif`;
+        addTextShadow('🎰 เลขมงคลประจำวัน', centerX, centerY - verticalSpacing * 2, '#FFD700');
 
-        // Draw 3-digit numbers
-        ctx.font = 'bold 24px Arial';
-        ctx.fillStyle = '#FF6B6B';
-        ctx.fillText('เลข 3 ตัว:', centerX - 100, centerY - 30);
+        // Draw 3-digit numbers section
+        ctx.font = `bold ${labelFontSize}px Arial, sans-serif`;
+        addTextShadow('เลข 3 ตัว:', centerX, centerY - verticalSpacing, '#FF6B6B');
 
-        ctx.font = 'bold 32px Arial';
-        ctx.fillStyle = '#FFFFFF';
+        ctx.font = `bold ${numberFontSize}px Arial, sans-serif`;
+        const spacing3Digit = canvas.width / 5;
         numbers.threeDigit.forEach((num, index) => {
-          ctx.fillText(num, centerX + (index - 0.5) * 80, centerY);
+          const x = centerX + (index - 0.5) * spacing3Digit;
+          addTextShadow(num, x, centerY - verticalSpacing / 2, '#FFFFFF');
         });
 
-        // Draw 2-digit numbers
-        ctx.font = 'bold 24px Arial';
-        ctx.fillStyle = '#4ECDC4';
-        ctx.fillText('เลข 2 ตัว:', centerX - 100, centerY + 40);
+        // Draw 2-digit numbers section
+        ctx.font = `bold ${labelFontSize}px Arial, sans-serif`;
+        addTextShadow('เลข 2 ตัว:', centerX, centerY + verticalSpacing / 2, '#4ECDC4');
 
-        ctx.font = 'bold 28px Arial';
-        ctx.fillStyle = '#FFFFFF';
+        ctx.font = `bold ${numberFontSize * 0.9}px Arial, sans-serif`;
+        const spacing2Digit = canvas.width / 6;
         numbers.twoDigit.forEach((num, index) => {
-          ctx.fillText(num, centerX + (index - 1) * 70, centerY + 70);
+          const x = centerX + (index - 1) * spacing2Digit;
+          addTextShadow(num, x, centerY + verticalSpacing, '#FFFFFF');
         });
 
         // Draw blessing text
-        ctx.font = 'bold 16px Arial';
-        ctx.fillStyle = '#FFD700';
-        ctx.fillText('🙏 ขอให้โชคดี มีความสุข และร่ำรวย! 🍀💰', centerX, centerY + 110);
+        ctx.font = `bold ${blessingFontSize}px Arial, sans-serif`;
+        addTextShadow('🙏 ขอให้โชคดี มีความสุข และร่ำรวย! 🍀💰', centerX, centerY + verticalSpacing * 2, '#FFD700');
 
         // Download the image
         const link = document.createElement('a');
         link.download = `lottery-overlay-${Date.now()}.png`;
-        link.href = canvas.toDataURL('image/png');
+        link.href = canvas.toDataURL('image/png', 0.95);
         link.click();
 
         setIsDownloading(false);
@@ -128,91 +157,145 @@ const RandomLottery: React.FC = () => {
     }
   };
 
+  const resetAll = () => {
+    setBackgroundImage(null);
+    setNumbers({ threeDigit: [], twoDigit: [] });
+    setImageInfo(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4">
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <span className="text-4xl">🎰</span>
-            <h1 className="text-3xl lg:text-4xl font-bold text-gray-800">
+            <span className="text-5xl animate-bounce">🎰</span>
+            <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
               เครื่องสุ่มเลขมงคล
             </h1>
+            <span className="text-5xl animate-bounce">🍀</span>
           </div>
-          <p className="text-gray-600 text-lg">อัปโหลดภาพพื้นหลัง แล้วสร้างเลขมงคลบนภาพ</p>
+          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+            อัปโหลดภาพพื้นหลังที่คุณชื่นชอบ แล้วให้เราสร้างเลขมงคลบนภาพให้คุณ
+          </p>
         </div>
 
         {/* Upload Section */}
         {!backgroundImage && (
-          <div className="bg-white rounded-xl p-8 shadow-lg border-2 border-dashed border-gray-300 mb-8">
+          <div className="bg-white rounded-2xl p-8 shadow-xl border-2 border-dashed border-purple-300 mb-8 hover:border-purple-500 transition-colors duration-300">
             <div className="text-center">
-              <div className="text-6xl mb-4">📸</div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-4">อัปโหลดภาพพื้นหลัง</h3>
-              <p className="text-gray-500 mb-6">เลือกภาพที่ต้องการใช้เป็นพื้นหลังสำหรับเลขมงคล</p>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                ref={fileInputRef}
-                className="hidden"
-              />
+              <div className="text-8xl mb-6 animate-pulse">📸</div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-4">อัปโหลดภาพพื้นหลัง</h3>
+              <p className="text-gray-500 mb-8 text-lg">
+                เลือกภาพที่ต้องการใช้เป็นพื้นหลังสำหรับเลขมงคลของคุณ
+              </p>
               <button
-                onClick={() => fileInputRef.current?.click()}
-                className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:from-blue-600 hover:to-purple-700 transform hover:scale-105 transition-all duration-200"
+                onClick={handleImageChange}
+                className="px-10 py-4 bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-600 text-white font-bold text-lg rounded-xl shadow-lg hover:from-purple-600 hover:via-blue-600 hover:to-indigo-700 transform hover:scale-105 hover:shadow-xl transition-all duration-300"
               >
-                <span className="flex items-center gap-2">
-                  <span>📂</span>
+                <span className="flex items-center gap-3">
+                  <span className="text-2xl">📂</span>
                   <span>เลือกภาพ</span>
                 </span>
               </button>
+              <p className="text-sm text-gray-400 mt-4">รองรับไฟล์ JPG, PNG, WEBP</p>
             </div>
           </div>
         )}
 
         {/* Preview Section */}
         {backgroundImage && (
-          <div className="bg-white rounded-xl p-6 shadow-lg mb-8">
-            <div className="relative">
+          <div className="bg-white rounded-2xl p-6 shadow-xl mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800">🖼️ ตัวอย่างภาพ</h3>
+              {imageInfo && (
+                <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                  {imageInfo.width} × {imageInfo.height} px
+                </span>
+              )}
+            </div>
+            <div className="relative bg-gray-100 rounded-xl overflow-hidden">
               <img
                 src={backgroundImage}
-                alt="Background"
-                className="w-full max-h-96 object-contain rounded-lg"
+                alt="Background Preview"
+                className="w-full max-h-[500px] object-contain"
               />
 
-              {/* Overlay Numbers Preview */}
+              {/* Live Overlay Preview */}
               {numbers.threeDigit.length > 0 && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="bg-black/70 backdrop-blur-sm rounded-lg p-6 border-2 border-yellow-400">
-                    <div className="text-center">
-                      <div className="text-yellow-400 font-bold text-xl mb-3">
+                <div className="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
+                  <div className="w-full h-full flex flex-col justify-center items-center text-center">
+                    {/* Title */}
+                    <div className="mb-6">
+                      <div
+                        className="text-yellow-300 font-bold text-2xl sm:text-3xl md:text-4xl mb-4 drop-shadow-2xl"
+                        style={{
+                          textShadow: '3px 3px 0px rgba(0,0,0,0.8), -3px -3px 0px rgba(0,0,0,0.8), 3px -3px 0px rgba(0,0,0,0.8), -3px 3px 0px rgba(0,0,0,0.8)'
+                        }}
+                      >
                         🎰 เลขมงคลประจำวัน
                       </div>
+                    </div>
 
-                      <div className="mb-4">
-                        <div className="text-red-400 font-semibold mb-2">เลข 3 ตัว:</div>
-                        <div className="flex gap-4 justify-center">
-                          {numbers.threeDigit.map((num, index) => (
-                            <div key={index} className="bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-2xl px-4 py-2 rounded-lg shadow-lg">
-                              {num}
-                            </div>
-                          ))}
-                        </div>
+                    {/* 3-digit numbers */}
+                    <div className="mb-6">
+                      <div
+                        className="text-red-300 font-bold text-lg sm:text-xl md:text-2xl mb-3 drop-shadow-2xl"
+                        style={{
+                          textShadow: '2px 2px 0px rgba(0,0,0,0.8), -2px -2px 0px rgba(0,0,0,0.8), 2px -2px 0px rgba(0,0,0,0.8), -2px 2px 0px rgba(0,0,0,0.8)'
+                        }}
+                      >
+                        เลข 3 ตัว:
                       </div>
+                      <div className="flex gap-4 sm:gap-6 md:gap-8 justify-center">
+                        {numbers.threeDigit.map((num, index) => (
+                          <div
+                            key={index}
+                            className="text-white font-bold text-2xl sm:text-3xl md:text-4xl drop-shadow-2xl"
+                            style={{
+                              textShadow: '4px 4px 0px rgba(0,0,0,0.8), -4px -4px 0px rgba(0,0,0,0.8), 4px -4px 0px rgba(0,0,0,0.8), -4px 4px 0px rgba(0,0,0,0.8)'
+                            }}
+                          >
+                            {num}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
-                      <div className="mb-4">
-                        <div className="text-teal-400 font-semibold mb-2">เลข 2 ตัว:</div>
-                        <div className="flex gap-3 justify-center">
-                          {numbers.twoDigit.map((num, index) => (
-                            <div key={index} className="bg-gradient-to-r from-teal-500 to-teal-600 text-white font-bold text-xl px-3 py-2 rounded-lg shadow-lg">
-                              {num}
-                            </div>
-                          ))}
-                        </div>
+                    {/* 2-digit numbers */}
+                    <div className="mb-6">
+                      <div
+                        className="text-teal-300 font-bold text-lg sm:text-xl md:text-2xl mb-3 drop-shadow-2xl"
+                        style={{
+                          textShadow: '2px 2px 0px rgba(0,0,0,0.8), -2px -2px 0px rgba(0,0,0,0.8), 2px -2px 0px rgba(0,0,0,0.8), -2px 2px 0px rgba(0,0,0,0.8)'
+                        }}
+                      >
+                        เลข 2 ตัว:
                       </div>
+                      <div className="flex gap-3 sm:gap-4 md:gap-6 justify-center">
+                        {numbers.twoDigit.map((num, index) => (
+                          <div
+                            key={index}
+                            className="text-white font-bold text-xl sm:text-2xl md:text-3xl drop-shadow-2xl"
+                            style={{
+                              textShadow: '3px 3px 0px rgba(0,0,0,0.8), -3px -3px 0px rgba(0,0,0,0.8), 3px -3px 0px rgba(0,0,0,0.8), -3px 3px 0px rgba(0,0,0,0.8)'
+                            }}
+                          >
+                            {num}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
-                      <div className="text-yellow-400 font-semibold text-sm">
-                        🙏 ขอให้โชคดี มีความสุข และร่ำรวย! 🍀💰
-                      </div>
+                    {/* Blessing */}
+                    <div
+                      className="text-yellow-300 font-bold text-sm sm:text-base md:text-lg drop-shadow-2xl"
+                      style={{
+                        textShadow: '2px 2px 0px rgba(0,0,0,0.8), -2px -2px 0px rgba(0,0,0,0.8), 2px -2px 0px rgba(0,0,0,0.8), -2px 2px 0px rgba(0,0,0,0.8)'
+                      }}
+                    >
+                      🙏 ขอให้โชคดี มีความสุข และร่ำรวย! 🍀💰
                     </div>
                   </div>
                 </div>
@@ -223,74 +306,166 @@ const RandomLottery: React.FC = () => {
 
         {/* Action Buttons */}
         {backgroundImage && (
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-center mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {/* Generate Numbers Button */}
             <button
               onClick={generateNumbers}
               disabled={isGenerating}
               className={`
-                px-8 py-3 text-lg font-semibold text-white rounded-lg shadow-lg
+                px-6 py-4 text-lg font-bold text-white rounded-xl shadow-lg
                 bg-gradient-to-r from-orange-500 to-red-600
-                hover:from-orange-600 hover:to-red-700
-                transform hover:scale-105 active:scale-95 transition-all duration-200
+                hover:from-orange-600 hover:to-red-700 hover:shadow-xl
+                transform hover:scale-105 active:scale-95 transition-all duration-300
                 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
                 ${isGenerating ? 'animate-pulse' : ''}
               `}
             >
               {isGenerating ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                   <span>กำลังสุ่ม...</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <span>🎲</span>
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-xl">🎲</span>
                   <span>สุ่มเลขใหม่</span>
                 </div>
               )}
             </button>
 
+            {/* Change Background Button */}
+            <button
+              onClick={handleImageChange}
+              className="px-6 py-4 text-lg font-bold text-white rounded-xl shadow-lg bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all duration-300"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-xl">🖼️</span>
+                <span>เปลี่ยนพื้นหลัง</span>
+              </div>
+            </button>
+
+            {/* Download Button */}
             <button
               onClick={downloadImage}
               disabled={isDownloading || numbers.threeDigit.length === 0}
               className={`
-                px-8 py-3 text-lg font-semibold text-white rounded-lg shadow-lg
+                px-6 py-4 text-lg font-bold text-white rounded-xl shadow-lg
                 bg-gradient-to-r from-green-500 to-emerald-600
-                hover:from-green-600 hover:to-emerald-700
-                transform hover:scale-105 active:scale-95 transition-all duration-200
+                hover:from-green-600 hover:to-emerald-700 hover:shadow-xl
+                transform hover:scale-105 active:scale-95 transition-all duration-300
                 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
                 ${isDownloading ? 'animate-pulse' : ''}
               `}
             >
               {isDownloading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                   <span>กำลังสร้าง...</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <span>💾</span>
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-xl">💾</span>
                   <span>ดาวน์โหลดภาพ</span>
                 </div>
               )}
             </button>
 
+            {/* Reset Button */}
             <button
-              onClick={() => {
-                setBackgroundImage(null);
-                setNumbers({ threeDigit: [], twoDigit: [] });
-                if (fileInputRef.current) fileInputRef.current.value = '';
-              }}
-              className="px-8 py-3 text-lg font-semibold text-gray-700 bg-gray-200 rounded-lg shadow-lg hover:bg-gray-300 transform hover:scale-105 active:scale-95 transition-all duration-200"
+              onClick={resetAll}
+              className="px-6 py-4 text-lg font-bold text-gray-700 bg-gradient-to-r from-gray-200 to-gray-300 rounded-xl shadow-lg hover:from-gray-300 hover:to-gray-400 hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all duration-300"
             >
-              <div className="flex items-center gap-2">
-                <span>🔄</span>
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-xl">🔄</span>
                 <span>เริ่มใหม่</span>
               </div>
             </button>
           </div>
         )}
 
-        {/* Hidden input for file upload */}
+        {/* Current Numbers Display */}
+        {numbers.threeDigit.length > 0 && (
+          <div className="bg-gradient-to-r from-yellow-50 via-orange-50 to-red-50 rounded-2xl p-6 shadow-xl mb-8">
+            <div className="text-center">
+              <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center justify-center gap-2">
+                <span>🍀</span>
+                <span>เลขมงคลของคุณ</span>
+                <span>🍀</span>
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white rounded-xl p-6 shadow-lg border-2 border-red-100">
+                  <div className="text-red-600 font-bold text-xl mb-3 flex items-center justify-center gap-2">
+                    <span>📊</span>
+                    <span>เลข 3 ตัว</span>
+                  </div>
+                  <div className="text-gray-600 mb-4">เลขนำโชคสำหรับหวยรัฐบาล</div>
+                  <div className="flex gap-3 justify-center">
+                    {numbers.threeDigit.map((num, index) => (
+                      <span key={index} className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-xl font-bold text-xl shadow-lg">
+                        {num}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl p-6 shadow-lg border-2 border-teal-100">
+                  <div className="text-teal-600 font-bold text-xl mb-3 flex items-center justify-center gap-2">
+                    <span>🎯</span>
+                    <span>เลข 2 ตัว</span>
+                  </div>
+                  <div className="text-gray-600 mb-4">เลขนำโชคสำหรับหวยท้าย 2 ตัว</div>
+                  <div className="flex gap-2 justify-center">
+                    {numbers.twoDigit.map((num, index) => (
+                      <span key={index} className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white px-4 py-2 rounded-xl font-bold text-lg shadow-lg">
+                        {num}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-8 text-gray-700">
+                <p className="text-xl font-semibold">🙏 ขอให้โชคดี มีความสุข และร่ำรวย! 🍀💰</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Instructions */}
+        <div className="bg-white rounded-2xl p-6 shadow-xl">
+          <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+            <span>📖</span>
+            <span>วิธีใช้งาน</span>
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-gray-600">
+            <div className="space-y-4">
+              <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-xl">
+                <span className="bg-blue-500 text-white font-bold text-lg w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">1</span>
+                <span className="text-lg">อัปโหลดภาพพื้นหลังที่ต้องการ</span>
+              </div>
+              <div className="flex items-start gap-4 p-4 bg-green-50 rounded-xl">
+                <span className="bg-green-500 text-white font-bold text-lg w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">2</span>
+                <span className="text-lg">ระบบจะสุ่มเลขมงคลโดยอัตโนมัติ</span>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-start gap-4 p-4 bg-orange-50 rounded-xl">
+                <span className="bg-orange-500 text-white font-bold text-lg w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">3</span>
+                <span className="text-lg">สุ่มเลขใหม่หรือเปลี่ยนพื้นหลังได้ตามต้องการ</span>
+              </div>
+              <div className="flex items-start gap-4 p-4 bg-purple-50 rounded-xl">
+                <span className="bg-purple-500 text-white font-bold text-lg w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">4</span>
+                <span className="text-lg">ดาวน์โหลดภาพที่มีเลขมงคลแล้ว</span>
+              </div>
+            </div>
+          </div>
+          <div className="mt-6 p-4 bg-yellow-50 rounded-xl border-l-4 border-yellow-400">
+            <p className="text-gray-700">
+              <span className="font-bold">💡 เคล็ดลับ:</span>
+              ภาพที่มีคุณภาพสูงจะให้ผลลัพธ์ที่ดีกว่า และตัวอักษรจะปรับขนาดให้เหมาะสมกับภาพโดยอัตโนมัติ
+            </p>
+          </div>
+        </div>
+
+        {/* Hidden elements */}
         <input
           type="file"
           accept="image/*"
@@ -298,12 +473,10 @@ const RandomLottery: React.FC = () => {
           ref={fileInputRef}
           className="hidden"
         />
-
-        {/* Hidden canvas for image processing */}
         <canvas ref={canvasRef} className="hidden" />
       </div>
     </div>
   );
 };
 
-export default RandomLottery;
+export default ThaiLotteryOverlay;
