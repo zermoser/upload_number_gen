@@ -18,7 +18,7 @@ const LoginForm: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     setIsLogging(true);
 
     setTimeout(() => {
-      if (username === 'admin' && password === 'admin@lnwza007') {
+      if (username === 'Admin1234' && password === 'Admin5678') {
         onLogin();
       } else {
         setError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
@@ -122,24 +122,6 @@ const LoginForm: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
           </button>
         </form>
 
-        {/* Demo Credentials */}
-        <div className="mt-8 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl border-l-4 border-yellow-400">
-          <p className="text-sm text-gray-700">
-            <span className="font-bold">💡 ข้อมูลสำหรับทดสอบ:</span>
-          </p>
-          <div className="mt-2 space-y-1 text-sm">
-            <p><span className="font-medium">ชื่อผู้ใช้:</span> admin</p>
-            <p><span className="font-medium">รหัสผ่าน:</span> admin@lnwza007</p>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-8 text-center text-sm text-gray-500">
-          <div className="flex items-center justify-center gap-2">
-            <span>🔐</span>
-            <span>ระบบปลอดภัย 100%</span>
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -150,7 +132,6 @@ const ThaiLotteryOverlay: React.FC = () => {
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
   const [numbers, setNumbers] = useState<LotteryNumbers>({ threeDigit: [], twoDigit: [] });
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [isDownloading, setIsDownloading] = useState<boolean>(false);
   const [imageInfo, setImageInfo] = useState<{ width: number; height: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -204,103 +185,6 @@ const ThaiLotteryOverlay: React.FC = () => {
   const handleImageChange = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
-    }
-  };
-
-  // Draw numbers on canvas and download
-  const downloadImage = async () => {
-    if (!backgroundImage || !canvasRef.current || !imageInfo) return;
-
-    setIsDownloading(true);
-
-    try {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      const img = new Image();
-      img.onload = () => {
-        // Set canvas size to match original image dimensions
-        canvas.width = imageInfo.width;
-        canvas.height = imageInfo.height;
-
-        // Draw background image
-        ctx.drawImage(img, 0, 0, imageInfo.width, imageInfo.height);
-
-        // Setup text styling
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        // Calculate positions based on image size
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-
-        // Calculate font sizes - 70% of image size as requested
-        const baseFontMultiplier = Math.min(canvas.width, canvas.height) * 0.7 / 1000; // Scale based on smaller dimension
-        const titleFontSize = Math.max(48 * baseFontMultiplier, 24);
-        const labelFontSize = Math.max(36 * baseFontMultiplier, 18);
-        const numberFontSize = Math.max(60 * baseFontMultiplier, 30);
-
-        // Add text shadow effect for better visibility
-        const addTextShadow = (text: string, x: number, y: number, color: string, shadowColor: string = 'rgba(0,0,0,0.8)') => {
-          const shadowOffset = Math.max(baseFontMultiplier * 3, 2);
-          // Draw shadow with multiple offsets for better visibility
-          ctx.fillStyle = shadowColor;
-          for (let dx = -shadowOffset; dx <= shadowOffset; dx++) {
-            for (let dy = -shadowOffset; dy <= shadowOffset; dy++) {
-              if (dx !== 0 || dy !== 0) {
-                ctx.fillText(text, x + dx, y + dy);
-              }
-            }
-          }
-          // Draw main text
-          ctx.fillStyle = color;
-          ctx.fillText(text, x, y);
-        };
-
-        // Calculate vertical spacing based on image height
-        const verticalSpacing = canvas.height / 8;
-
-        // Draw title
-        ctx.font = `bold ${titleFontSize}px Arial, sans-serif`;
-        addTextShadow('เลขมงคลประจำวัน', centerX, centerY - verticalSpacing * 2, '#FFD700');
-
-        // Draw 3-digit numbers section
-        ctx.font = `bold ${labelFontSize}px Arial, sans-serif`;
-        addTextShadow('เลข 3 ตัว:', centerX, centerY - verticalSpacing, '#FF6B6B');
-
-        ctx.font = `bold ${numberFontSize}px Arial, sans-serif`;
-        const spacing3Digit = canvas.width / 5;
-        numbers.threeDigit.forEach((num, index) => {
-          const x = centerX + (index - 0.5) * spacing3Digit;
-          addTextShadow(num, x, centerY - verticalSpacing / 2, '#FFFFFF');
-        });
-
-        // Draw 2-digit numbers section
-        ctx.font = `bold ${labelFontSize}px Arial, sans-serif`;
-        addTextShadow('เลข 2 ตัว:', centerX, centerY + verticalSpacing / 2, '#4ECDC4');
-
-        ctx.font = `bold ${numberFontSize * 0.9}px Arial, sans-serif`;
-        const spacing2Digit = canvas.width / 6;
-        numbers.twoDigit.forEach((num, index) => {
-          const x = centerX + (index - 1) * spacing2Digit;
-          addTextShadow(num, x, centerY + verticalSpacing, '#FFFFFF');
-        });
-
-        // Download the image
-        const link = document.createElement('a');
-        link.download = `lottery-overlay-${Date.now()}.png`;
-        link.href = canvas.toDataURL('image/png', 0.95);
-        link.click();
-
-        setIsDownloading(false);
-      };
-
-      img.src = backgroundImage;
-    } catch (error) {
-      console.error('Error creating image:', error);
-      alert('เกิดข้อผิดพลาดในการสร้างภาพ');
-      setIsDownloading(false);
     }
   };
 
@@ -390,62 +274,36 @@ const ThaiLotteryOverlay: React.FC = () => {
                   <div className="w-full h-full flex flex-col justify-center items-center text-center">
                     {/* Title */}
                     <div className="mb-6">
-                      <div
-                        className="text-yellow-300 font-bold text-2xl sm:text-3xl md:text-4xl mb-4 drop-shadow-2xl"
-                        style={{
-                          textShadow: '3px 3px 0px rgba(0,0,0,0.8), -3px -3px 0px rgba(0,0,0,0.8), 3px -3px 0px rgba(0,0,0,0.8), -3px 3px 0px rgba(0,0,0,0.8)'
-                        }}
-                      >
+                      <div className="font-bold text-2xl sm:text-3xl md:text-4xl mb-4 bg-white p-4 rounded-xl">
                         เลขมงคลประจำวัน
                       </div>
                     </div>
 
+
                     {/* 3-digit numbers */}
-                    <div className="mb-6">
-                      <div
-                        className="text-red-300 font-bold text-lg sm:text-xl md:text-2xl mb-3 drop-shadow-2xl"
-                        style={{
-                          textShadow: '2px 2px 0px rgba(0,0,0,0.8), -2px -2px 0px rgba(0,0,0,0.8), 2px -2px 0px rgba(0,0,0,0.8), -2px 2px 0px rgba(0,0,0,0.8)'
-                        }}
-                      >
-                        เลข 3 ตัว:
+                    <div className="bg-white rounded-xl p-4 shadow-lg border-2 border-red-100 mb-6">
+                      <div className="text-red-600 font-bold text-xl mb-3 flex items-center justify-center gap-2">
+                        <span>เลข 3 ตัว</span>
                       </div>
-                      <div className="flex gap-4 sm:gap-6 md:gap-8 justify-center">
+                      <div className="flex gap-3 justify-center">
                         {numbers.threeDigit.map((num, index) => (
-                          <div
-                            key={index}
-                            className="text-white font-bold text-2xl sm:text-3xl md:text-4xl drop-shadow-2xl"
-                            style={{
-                              textShadow: '4px 4px 0px rgba(0,0,0,0.8), -4px -4px 0px rgba(0,0,0,0.8), 4px -4px 0px rgba(0,0,0,0.8), -4px 4px 0px rgba(0,0,0,0.8)'
-                            }}
-                          >
+                          <span key={index} className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-xl font-bold text-xl shadow-lg">
                             {num}
-                          </div>
+                          </span>
                         ))}
                       </div>
                     </div>
 
                     {/* 2-digit numbers */}
-                    <div className="mb-6">
-                      <div
-                        className="text-teal-300 font-bold text-lg sm:text-xl md:text-2xl mb-3 drop-shadow-2xl"
-                        style={{
-                          textShadow: '2px 2px 0px rgba(0,0,0,0.8), -2px -2px 0px rgba(0,0,0,0.8), 2px -2px 0px rgba(0,0,0,0.8), -2px 2px 0px rgba(0,0,0,0.8)'
-                        }}
-                      >
-                        เลข 2 ตัว:
+                    <div className="bg-white rounded-xl p-4 shadow-lg border-2 border-teal-100">
+                      <div className="text-teal-600 font-bold text-xl mb-3 flex items-center justify-center gap-2">
+                        <span>เลข 2 ตัว</span>
                       </div>
-                      <div className="flex gap-3 sm:gap-4 md:gap-6 justify-center">
+                      <div className="flex gap-2 justify-center">
                         {numbers.twoDigit.map((num, index) => (
-                          <div
-                            key={index}
-                            className="text-white font-bold text-xl sm:text-2xl md:text-3xl drop-shadow-2xl"
-                            style={{
-                              textShadow: '3px 3px 0px rgba(0,0,0,0.8), -3px -3px 0px rgba(0,0,0,0.8), 3px -3px 0px rgba(0,0,0,0.8), -3px 3px 0px rgba(0,0,0,0.8)'
-                            }}
-                          >
+                          <span key={index} className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white px-4 py-2 rounded-xl font-bold text-lg shadow-lg">
                             {num}
-                          </div>
+                          </span>
                         ))}
                       </div>
                     </div>
@@ -458,7 +316,7 @@ const ThaiLotteryOverlay: React.FC = () => {
 
         {/* Action Buttons */}
         {backgroundImage && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8 mx-6">
             {/* Generate Numbers Button */}
             <button
               onClick={generateNumbers}
@@ -494,32 +352,6 @@ const ThaiLotteryOverlay: React.FC = () => {
                 <span className="text-xl">🖼️</span>
                 <span>เปลี่ยนพื้นหลัง</span>
               </div>
-            </button>
-
-            {/* Download Button */}
-            <button
-              onClick={downloadImage}
-              disabled={isDownloading || numbers.threeDigit.length === 0}
-              className={`
-                px-6 py-4 text-lg font-bold text-white rounded-xl shadow-lg
-                bg-gradient-to-r from-green-500 to-emerald-600
-                hover:from-green-600 hover:to-emerald-700 hover:shadow-xl
-                transform hover:scale-105 active:scale-95 transition-all duration-300
-                disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
-                ${isDownloading ? 'animate-pulse' : ''}
-              `}
-            >
-              {isDownloading ? (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>กำลังสร้าง...</span>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-xl">💾</span>
-                  <span>ดาวน์โหลดภาพ</span>
-                </div>
-              )}
             </button>
 
             {/* Reset Button */}
